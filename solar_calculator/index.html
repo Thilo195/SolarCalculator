@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solar Simulator Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #2563eb; }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-950 min-h-screen text-slate-100 font-sans p-4 md:p-8">
+
+    <div class="max-w-7xl mx-auto">
+        <header class="mb-10 text-center">
+            <h1 class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400 drop-shadow-lg">
+                Solar Investment Simulator
+            </h1>
+            <p class="text-slate-400 mt-2">Live API Weather Data, Exchange Electricity Prices & ROI Analysis</p>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            
+            <div class="bg-white/10 backdrop-blur-md border border-white/10 rounded-2xl p-6 shadow-2xl flex flex-col">
+                <h3 class="text-xl font-bold mb-4 text-blue-300">Base Consumers</h3>
+                
+                <label class="block text-xs text-slate-400 mb-1">Device Name:</label>
+                <input type="text" id="devName" placeholder="e.g. Stove" class="w-full bg-slate-800/50 border border-slate-600 rounded px-3 py-2 mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                
+                <label class="block text-xs text-slate-400 mb-1">Power (Watts):</label>
+                <input type="number" id="devPower" min="0" placeholder="e.g. 2000" class="w-full bg-slate-800/50 border border-slate-600 rounded px-3 py-2 mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                
+                <div class="flex gap-3 mb-4 text-sm">
+                    <div class="w-1/2">
+                        <label class="block text-xs text-slate-400 mb-1">Start Time:</label>
+                        <input type="time" id="devStart" value="12:00" class="w-full bg-slate-800/50 border border-slate-600 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div class="w-1/2">
+                        <label class="block text-xs text-slate-400 mb-1">End Time:</label>
+                        <input type="time" id="devEnd" value="13:30" class="w-full bg-slate-800/50 border border-slate-600 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
+                <button onclick="addDevice()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 rounded transition-colors shadow-lg">Add</button>
+                <ul id="deviceList" class="mt-4 space-y-2 text-sm text-slate-300 max-h-48 overflow-y-auto pr-2"></ul>
+            </div>
+
+            <div class="bg-white/10 backdrop-blur-md border border-white/10 rounded-2xl p-6 shadow-2xl">
+                <h3 class="text-xl font-bold mb-4 text-emerald-300">Heat & EV</h3>
+                <div class="mb-4">
+                    <label class="flex items-center gap-2 mb-2 cursor-pointer">
+                        <input type="checkbox" id="hpActive" class="w-4 h-4 text-emerald-500 bg-slate-800 border-slate-600 rounded focus:ring-emerald-500">
+                        <span class="font-semibold">Heat Pump</span>
+                    </label>
+                    
+                    <label class="block text-xs text-slate-400 mb-1">Operating Mode:</label>
+                    <select id="hpSeason" class="w-full bg-slate-800/50 border border-slate-600 rounded px-3 py-2 mb-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 text-white">
+                        <option value="summer">Summer (Hot Water Only)</option>
+                        <option value="winter">Winter (Heating)</option>
+                    </select>
+                    
+                    <label class="block text-xs text-slate-400 mb-1">Therm. Demand/Day (kWh):</label>
+                    <input type="number" id="hpThermal" min="0" placeholder="e.g. 20" class="w-full bg-slate-800/50 border border-slate-600 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+                <hr class="border-slate-600 my-4">
+                <div>
+                    <label class="flex items-center gap-2 mb-2 cursor-pointer">
+                        <input type="checkbox" id="evActive" class="w-4 h-4 text-emerald-500 bg-slate-800 border-slate-600 rounded focus:ring-emerald-500">
+                        <span class="font-semibold">EV (Electric Vehicle)</span>
+                    </label>
+                    <div class="flex gap-2 mb-2">
+                        <div class="w-1/2">
+                            <label class="block text-xs text-slate-400 mb-1">Battery (kWh):</label>
+                            <input type="number" id="evCapacity" min="0" value="50" class="w-full bg-slate-800/50 border border-slate-600 rounded px-3 py-2 text-sm">
+                        </div>
+                        <div class="w-1/2">
+                            <label class="block text-xs text-slate-400 mb-1">Demand (kWh):</label>
+                            <input type="number" id="evUsage" min="0" value="15" class="w-full bg-slate-800/50 border border-slate-600 rounded px-3 py-2 text-sm">
+                        </div>
+                    </div>
+                    <label class="flex items-center gap-2 mb-3 text-sm text-slate-300">
+                        <input type="checkbox" id="evV2H" class="rounded bg-slate-800 border-slate-600 text-blue-500 focus:ring-blue-500"> V2H Discharge to House
+                    </label>
+                    <div class="flex gap-2 text-sm">
+                        <div class="w-1/2">
+                            <label class="block text-xs text-slate-400 mb-1">Home from:</label>
+                            <input type="time" id="evStart" value="17:00" class="w-full bg-slate-800/50 border border-slate-600 rounded px-2 py-1">
+                        </div>
+                        <div class="w-1/2">
+                            <label class="block text-xs text-slate-400 mb-1">Leaves at:</label>
+                            <input type="time" id="evEnd" value="07:00" class="w-full bg-slate-800/50 border border-slate-600 rounded px-2 py-1">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white/10 backdrop-blur-md border border-white/10 rounded-2xl p-6 shadow-2xl text-white">
+                <h3 class="text-xl font-bold mb-4 text-amber-300">Market & Prices</h3>
+                
+                <label class="block text-xs text-slate-400 mb-1">Grid Electricity Price (€/kWh):</label>
+                <input type="number" step="0.01" min="0" id="fixedPrice" value="0.35" class="w-full bg-slate-800/50 border border-slate-600 rounded px-3 py-2 mb-3 text-sm focus:ring-2 focus:ring-amber-500">
+                
+                <label class="flex items-center gap-2 mb-3 text-sm cursor-pointer">
+                    <input type="checkbox" id="useDynamic" class="w-4 h-4 text-amber-500 bg-slate-800 border-slate-600 rounded focus:ring-amber-500">
+                    <span class="font-semibold text-amber-200">Use Exchange Prices (Dynamic)</span>
+                </label>
+
+                <label class="block text-xs text-slate-400 mb-1">Feed-in Tariff (€/kWh):</label>
+                <input type="number" step="0.01" min="0" id="feedInTariff" value="0.08" class="w-full bg-slate-800/50 border border-slate-600 rounded px-3 py-2 mb-3 text-sm focus:ring-2 focus:ring-amber-500">
+
+                <div class="flex gap-2">
+                    <div class="w-1/2">
+                        <label class="block text-xs text-slate-400 mb-1">Price/Wp Solar:</label>
+                        <input type="number" step="0.01" min="0" id="costWp" value="0.30" class="w-full bg-slate-800/50 border border-slate-600 rounded px-2 py-2 text-sm focus:ring-2 focus:ring-amber-500">
+                    </div>
+                    <div class="w-1/2">
+                        <label class="block text-xs text-slate-400 mb-1">Price/kWh Battery:</label>
+                        <input type="number" step="1" min="0" id="costBat" value="400" class="w-full bg-slate-800/50 border border-slate-600 rounded px-2 py-2 text-sm focus:ring-2 focus:ring-amber-500">
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white/10 backdrop-blur-md border border-white/10 rounded-2xl p-6 shadow-2xl flex flex-col">
+                <h3 class="text-xl font-bold mb-4 text-purple-300">Planned Hardware</h3>
+                
+                <label class="block text-xs text-slate-400 mb-1">Solar Power (Wp):</label>
+                <input type="number" id="setupWp" min="0" value="2000" class="w-full bg-slate-800/50 border border-slate-600 rounded px-3 py-2 mb-3 focus:outline-none focus:ring-2 focus:ring-purple-500 text-lg font-bold text-white">
+                
+                <label class="block text-xs text-slate-400 mb-1">House Battery (kWh):</label>
+                <input type="number" id="setupBattery" min="0" value="2" class="w-full bg-slate-800/50 border border-slate-600 rounded px-3 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-purple-500 text-lg font-bold text-white">
+                
+                <button onclick="calculate()" id="calcBtn" class="w-full mt-auto bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold py-3 rounded-lg shadow-[0_0_15px_rgba(147,51,234,0.4)] transition-all duration-300 transform hover:scale-105">
+                    Fetch Data & Start
+                </button>
+            </div>
+        </div>
+
+        <div id="results" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6 hidden">
+            <div class="bg-slate-800/80 rounded-xl p-4 border border-slate-600 text-center">
+                <p class="text-slate-400 text-xs xl:text-sm">Daily Demand</p>
+                <p id="resCons" class="text-2xl xl:text-3xl font-extrabold text-blue-300">-- kWh</p>
+            </div>
+            <div class="bg-slate-800/80 rounded-xl p-4 border border-slate-600 text-center relative overflow-hidden">
+                <p class="text-slate-400 text-xs xl:text-sm relative z-10">Solar Yield</p>
+                <p id="resSolar" class="text-2xl xl:text-3xl font-extrabold text-yellow-400 relative z-10">-- kWh</p>
+            </div>
+            <div class="bg-slate-800/80 rounded-xl p-4 border border-slate-600 text-center">
+                <p class="text-slate-400 text-xs xl:text-sm">Self-Sufficiency</p>
+                <p id="resAutarky" class="text-2xl xl:text-3xl font-extrabold text-emerald-400">--%</p>
+            </div>
+            <div class="bg-slate-800/80 rounded-xl p-4 border border-slate-600 text-center">
+                <p class="text-slate-400 text-xs xl:text-sm">Wasted (Export)</p>
+                <p id="resExport" class="text-2xl xl:text-3xl font-extrabold text-orange-400">-- kWh</p>
+            </div>
+            <div class="bg-slate-800/80 rounded-xl p-4 border border-slate-600 text-center">
+                <p class="text-slate-400 text-xs xl:text-sm">Savings per Day</p>
+                <p id="resSavings" class="text-2xl xl:text-3xl font-extrabold text-blue-400">-- €</p>
+            </div>
+            <div class="bg-slate-800/80 rounded-xl p-4 border border-slate-600 text-center relative overflow-hidden">
+                <p class="text-slate-300 text-xs xl:text-sm relative z-10">ROI</p>
+                <p id="resROI" class="text-2xl xl:text-3xl font-extrabold text-amber-400 relative z-10">-- Years</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <div class="bg-slate-900/40 backdrop-blur-md border border-white/10 rounded-2xl p-6 shadow-2xl">
+                <h3 class="text-lg font-bold mb-2 text-slate-200">Investment Analysis</h3>
+                <canvas id="investmentChart" height="200"></canvas>
+            </div>
+            <div class="bg-slate-900/40 backdrop-blur-md border border-white/10 rounded-2xl p-6 shadow-2xl">
+                <h3 class="text-lg font-bold mb-2 text-slate-200">24h Daily Profile & Export</h3>
+                <canvas id="consumptionChart" height="200"></canvas>
+            </div>
+        </div>
+
+        <div class="bg-slate-900/40 backdrop-blur-md border border-white/10 rounded-2xl p-6 shadow-2xl mb-8">
+            <h3 class="text-lg font-bold mb-2 text-slate-200">Battery State of Charge (24h)</h3>
+            <canvas id="batteryChart" height="80"></canvas>
+        </div>
+    </div>
+
+    <script>
+        Chart.defaults.color = '#94a3b8';
+        Chart.defaults.borderColor = '#334155';
+
+        let devices = [];
+        let dailyChart = null;
+        let investChart = null;
+        let batteryChart = null;
+
+        function timeToMinutes(timeStr) {
+            const parts = timeStr.split(':');
+            return parseInt(parts[0]) * 60 + parseInt(parts[1]);
+        }
+        
+        function getNum(id, fallback) {
+            const val = parseFloat(document.getElementById(id).value);
+            return (isNaN(val) || val < 0) ? Math.max(0, fallback) : val;
+        }
+
+        function addDevice() {
+            const name = document.getElementById('devName').value;
+            const power = parseFloat(document.getElementById('devPower').value);
+            const startStr = document.getElementById('devStart').value;
+            const endStr = document.getElementById('devEnd').value;
+            
+            if(!name || isNaN(power) || power < 0 || !startStr || !endStr) return;
+            
+            devices.push({ name, power, startStr, endStr, start_min: timeToMinutes(startStr), end_min: timeToMinutes(endStr) });
+            renderDeviceList();
+        }
+
+        function removeDevice(index) { devices.splice(index, 1); renderDeviceList(); }
+
+        function renderDeviceList() {
+            const list = document.getElementById('deviceList');
+            list.innerHTML = '';
+            devices.forEach((dev, index) => {
+                list.innerHTML += `<li class="flex justify-between items-center border-b border-slate-700 pb-1"><span><strong>${dev.name}</strong>: ${dev.power}W (${dev.startStr}-${dev.endStr})</span><button onclick="removeDevice(${index})" class="text-red-400 hover:text-red-300">✕</button></li>`;
+            });
+        }
+
+        async function fetchExternalData() {
+            let dynamicPrices = [];
+            let customSolarCurve = [];
+
+            if (document.getElementById('useDynamic').checked) {
+                try {
+                    const priceRes = await fetch('https://api.awattar.de/v1/marketdata');
+                    const priceData = await priceRes.json();
+                    dynamicPrices = priceData.data.slice(0, 24).map(p => p.marketprice / 1000.0);
+                } catch (e) {
+                    console.error("Awattar API Error:", e);
+                }
+            }
+
+            try {
+                const weatherRes = await fetch('https://api.open-meteo.com/v1/forecast?latitude=51.16&longitude=10.45&hourly=direct_radiation,diffuse_radiation&timezone=Europe/Berlin&forecast_days=1');
+                const weatherData = await weatherRes.json();
+                for (let i = 0; i < 24; i++) {
+                    let ghi = weatherData.hourly.direct_radiation[i] + weatherData.hourly.diffuse_radiation[i];
+                    customSolarCurve.push(ghi);
+                }
+            } catch (e) {
+                console.error("Open-Meteo API Error:", e);
+            }
+
+            return { dynamicPrices, customSolarCurve };
+        }
+
+        async function calculate() {
+            const btn = document.getElementById('calcBtn');
+            btn.innerText = "Loading API Data...";
+            btn.classList.add("animate-pulse");
+
+            const externalData = await fetchExternalData();
+
+            let processedDevices = [];
+            devices.forEach(dev => {
+                if (dev.start_min > dev.end_min) {
+                    processedDevices.push({ power: dev.power, start_min: dev.start_min, end_min: 1440 }); 
+                    processedDevices.push({ power: dev.power, start_min: 0, end_min: dev.end_min });      
+                } else {
+                    processedDevices.push({ power: dev.power, start_min: dev.start_min, end_min: dev.end_min });
+                }
+            });
+
+            const evIsActive = document.getElementById('evActive').checked;
+            const payload = {
+                solar_wp: getNum('setupWp', 0),
+                battery_wh: getNum('setupBattery', 0) * 1000.0,
+                cost_wp: getNum('costWp', 0.60),
+                cost_bat: getNum('costBat', 400.0),
+                fixed_price: getNum('fixedPrice', 0.35),
+                feed_in_tariff: getNum('feedInTariff', 0.08),
+                use_dynamic: document.getElementById('useDynamic').checked,
+                dynamic_prices: externalData.dynamicPrices.length === 24 ? externalData.dynamicPrices : undefined,
+                custom_solar_curve: externalData.customSolarCurve.length === 24 ? externalData.customSolarCurve : undefined,
+                devices: processedDevices, 
+                heatpump: {
+                    active: document.getElementById('hpActive').checked,
+                    season: document.getElementById('hpSeason').value,
+                    thermal_kwh: getNum('hpThermal', 0)
+                },
+                ev: {
+                    active: evIsActive,
+                    capacity_kwh: getNum('evCapacity', 0),
+                    daily_kwh: getNum('evUsage', 0),
+                    v2h: document.getElementById('evV2H').checked,
+                    start_min: timeToMinutes(document.getElementById('evStart').value),
+                    end_min: timeToMinutes(document.getElementById('evEnd').value)
+                }
+            };
+
+            try {
+                const response = await fetch('/calculate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json();
+                
+                let totalSolarWh = data.solar_watts.reduce((sum, current) => sum + current, 0) / 60.0;
+                
+                document.getElementById('results').classList.remove('hidden');
+                document.getElementById('resCons').innerText = (data.total_consumption_wh / 1000).toFixed(2) + ' kWh';
+                document.getElementById('resSolar').innerText = (totalSolarWh / 1000).toFixed(2) + ' kWh';
+                document.getElementById('resAutarky').innerText = data.autarky.toFixed(1) + '%';
+                document.getElementById('resExport').innerText = (data.grid_export_wh / 1000).toFixed(2) + ' kWh';
+                
+                let savingsPerDay = data.economics.cost_without_pv - (data.economics.cost_with_pv - data.economics.revenue);
+                document.getElementById('resSavings').innerText = savingsPerDay.toFixed(2) + ' €';
+                
+                if (data.economics.roi_years > 50) {
+                    document.getElementById('resROI').innerText = "> 50 Years";
+                    document.getElementById('resROI').className = "text-2xl xl:text-3xl font-extrabold text-red-400 relative z-10";
+                } else {
+                    document.getElementById('resROI').innerText = data.economics.roi_years.toFixed(1) + ' Years';
+                    document.getElementById('resROI').className = "text-2xl xl:text-3xl font-extrabold text-emerald-400 relative z-10";
+                }
+
+                drawDailyChart(data.consumption_watts, data.solar_watts, data.export_watts);
+                drawInvestmentChart(data.investment_matrix);
+                drawBatteryChart(data.battery_level_wh, data.ev_level_wh, evIsActive);
+
+            } catch (err) {
+                console.error(err);
+            } finally {
+                btn.innerText = "Fetch Data & Start";
+                btn.classList.remove("animate-pulse");
+            }
+        }
+
+
+        function drawBatteryChart(houseBatteryData, evBatteryData, showEv) {
+            const ctx = document.getElementById('batteryChart').getContext('2d');
+            const labels = [];
+            const houseKwh = [];
+            const evKwh = [];
+
+            for(let i = 0; i < 1440; i++) {
+                labels.push(`${Math.floor(i / 60).toString().padStart(2, '0')}:${(i % 60).toString().padStart(2, '0')}`);
+                houseKwh.push(houseBatteryData[i] / 1000.0);
+                evKwh.push(evBatteryData[i] / 1000.0);
+            }
+
+            const datasets = [{
+                label: 'House Battery (kWh)',
+                data: houseKwh,
+                borderColor: '#10b981', // Emerald
+                backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                borderWidth: 2,
+                fill: true,
+                pointRadius: 0,
+                tension: 0.4
+            }];
+
+            if (showEv) {
+                datasets.push({
+                    label: 'EV Battery (kWh)',
+                    data: evKwh,
+                    borderColor: '#3b82f6', // Blue
+                    backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                    borderWidth: 2,
+                    fill: true,
+                    pointRadius: 0,
+                    tension: 0.4
+                });
+            }
+
+            if (batteryChart) batteryChart.destroy();
+            batteryChart = new Chart(ctx, {
+                type: 'line',
+                data: { labels: labels, datasets: datasets },
+                options: {
+                    responsive: true,
+                    interaction: { mode: 'index', intersect: false },
+                    scales: {
+                        x: { ticks: { maxTicksLimit: 24 }, grid: { display: false } },
+                        y: { title: { display: true, text: 'Charge Level (kWh)' }, beginAtZero: true }
+                    }
+                }
+            });
+        }
+
+        function drawDailyChart(consumptionData, solarData, exportWattsData) {
+            const ctx = document.getElementById('consumptionChart').getContext('2d');
+            const labels = [];
+            let cumulativeExportWh = [];
+            let currentSumWh = 0;
+            for(let i = 0; i < 1440; i++) {
+                labels.push(`${Math.floor(i / 60).toString().padStart(2, '0')}:${(i % 60).toString().padStart(2, '0')}`);
+                currentSumWh += (exportWattsData[i] / 60.0);
+                cumulativeExportWh.push(currentSumWh);
+            }
+            if (dailyChart) dailyChart.destroy();
+            dailyChart = new Chart(ctx, {
+                type: 'line', 
+                data: {
+                    labels: labels,
+                    datasets: [
+                        { label: 'Total Consumption (W)', data: consumptionData, yAxisID: 'y', borderColor: '#ef4444', backgroundColor: 'rgba(239, 68, 68, 0.2)', borderWidth: 1.5, fill: true, pointRadius: 0, stepped: true },
+                        { label: 'Solar Power (W)', data: solarData, yAxisID: 'y', borderColor: '#eab308', backgroundColor: 'rgba(234, 179, 8, 0.1)', borderWidth: 2, fill: true, pointRadius: 0, tension: 0.4 },
+                        { label: 'Cumulatively Wasted (Wh)', data: cumulativeExportWh, yAxisID: 'y1', borderColor: '#f97316', borderDash: [5, 5], borderWidth: 2, pointRadius: 0, fill: false, tension: 0.4 }
+                    ]
+                },
+                options: { responsive: true, interaction: { mode: 'index', intersect: false }, scales: { x: { ticks: { maxTicksLimit: 12 }, grid: { display: false } }, y: { type: 'linear', display: true, position: 'left' }, y1: { type: 'linear', display: true, position: 'right', grid: { drawOnChartArea: false } } } }
+            });
+        }
+
+        function drawInvestmentChart(matrixData) {
+            const ctx = document.getElementById('investmentChart').getContext('2d');
+            const labels = matrixData[0].data.map(p => p.wp + ' Wp');
+            const colors = ['#64748b', '#3b82f6', '#8b5cf6', '#10b981']; 
+            const datasets = matrixData.map((series, index) => {
+                return { label: series.battery_kwh === 0 ? 'No Battery' : `Battery: ${series.battery_kwh} kWh`, data: series.data.map(p => p.autarky), borderColor: colors[index], backgroundColor: colors[index], borderWidth: 2, tension: 0.3, pointRadius: 3 };
+            });
+            if (investChart) investChart.destroy();
+            investChart = new Chart(ctx, {
+                type: 'line',
+                data: { labels: labels, datasets: datasets },
+                options: { responsive: true, scales: { y: { title: { display: true, text: 'Self-Sufficiency in %' }, min: 0, max: 100 }, x: { grid: { display: false } } } }
+            });
+        }
+    </script>
+</body>
+</html>
